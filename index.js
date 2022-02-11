@@ -1,9 +1,9 @@
 import Scanner from './scanner.js';
 import Parser from './parser.js';
 import Interpreter from './interpreter.js';
-import ASTPrinter from './ast-printer.js';
-import readline from 'readline';
-import fs from 'fs';
+import Resolver from './resolver.js';
+import readline from 'node:readline';
+import fs from 'node:fs';
 
 import {hasError, clearError, hasRuntimeError, clearRuntimeError} from './utils.js';
 
@@ -43,6 +43,11 @@ function run(code) {
 	const tokens = scanner.scanTokens();
 	const parser = new Parser(tokens);
 	const statements = parser.parse();
+
+	if (hasError()) return;
+
+	const resolver = new Resolver(interpreter);
+	resolver.resolve(statements);
 
 	if (hasError()) return;
 

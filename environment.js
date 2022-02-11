@@ -7,7 +7,7 @@ export default class Environment {
 	}
 
 	define(key, value) {
-		this.values.set(key, value);
+		this.values.set(key.lexeme, value); //ugh, idk where we get lexeme lol
 	}
 
 	get(name) {
@@ -32,5 +32,22 @@ export default class Environment {
 		}
 
 		throw new RuntimeError(name, `Undefined variable '${name.lexeme}'`);
+	}
+
+	getAt(distance, name) {
+		this.ancestor(distance).get(name.lexeme);
+	}
+
+	ancestor(distance) {
+		let environment = this;
+		for (let i = 0; i < distance; i++) {
+			environment = environment.enclosing;
+		}
+
+		return environment;
+	}
+
+	assignAt(distance, name, value) {
+		this.ancestor(distance).values.put(name.lexeme, value);
 	}
 }

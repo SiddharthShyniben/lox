@@ -2,8 +2,9 @@ import {error} from './utils.js';
 
 export default class Resolver {
 	constructor(interpreter) {
-	this.interpreter = interpreter;
-	this.scopes = [];
+		this.interpreter = interpreter;
+		this.scopes = [];
+		this.currentFunction = 'NONE';
 	}
 
 	visitBlockStmt(stmt) {
@@ -39,7 +40,7 @@ export default class Resolver {
 		this.declare(stmt.name);
 		this.define(stmt.name);
 
-		this.resolveFunction(stmt);
+		this.resolveFunction(stmt, 'FUNCTION');
 	}
 
 	visitExpressionStmt(stmt) {
@@ -60,6 +61,10 @@ export default class Resolver {
 	}
 
 	visitReturnStmt(stmt) {
+		if (this.currentFunction === 'NONE') {
+			error(stmt.keyword, 'Cannot return from top-level code.');
+		}
+
 		if (stmt.value) {
 			this.resolveExpr(stmt.value);
 		}
@@ -98,7 +103,9 @@ export default class Resolver {
 		this.resolveExpr(expr.right);
 	}
 
-	resolveFunction(func) {
+	resolveFunction(func, type) {
+		const enclosingFunction = this.currentFunction;
+		this.currentFunction = type;
 		this.beginScope();
 
 		func.params.forEach(param => {
@@ -109,6 +116,7 @@ export default class Resolver {
 		this.resolve(func.body);
 
 		this.endScope();
+		this.currentFunction = enclosingFunction;
 	}
 
 	resolveLocal(expr, name) {
@@ -125,7 +133,12 @@ export default class Resolver {
 			return;
 		}
 
-		this.scopes[this.scopes.length - 1].set(name.lexeme, false);
+		const scope = this.scopes[this.scopes.length - 1];
+		if (scope.has(name.lexeme)) {
+			error(name, 'Variable with this name already declared in this scope.');
+		}
+
+		scope.set(name.lexeme, false);
 	}
 
 	define(name) {

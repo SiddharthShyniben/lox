@@ -8,10 +8,11 @@ export default class Interpreter {
 	constructor() {
 		this.globals = new Environment();
 		this.environment = this.globals;
+		this.locals = new Map();
 
 		this.globals.define('clock', {
 			arity: () => 0,
-			call: () => process.uptime(),
+			call: process.uptime,
 			toString: () => '<native fn>',
 		});
 	}
@@ -43,7 +44,7 @@ export default class Interpreter {
 
 	visitFunctionStmt(stmt) {
 		const _function = new LoxFunction(stmt, this.environment);
-		this.environment.define(stmt.name.lexeme, _function);
+		this.environment.define(stmt.name, _function);
 		return null;
 	}
 
@@ -154,15 +155,34 @@ export default class Interpreter {
 			value = this.evaluate(stmt.initializer);
 		}
 
-		this.environment.define(stmt.name.lexeme, value);
+		this.environment.define(stmt.name, value);
 	}
 
 	visitVariableExpr(expr) {
-		return this.environment.get(expr.name);
+		return this.lookupVariable(expr.name, expr);
+	}
+
+	lookupVariable(name, expr) {
+		const distance = this.locals.get(expr);
+
+		if (distance) {
+			return this.environment.getAt(distance, name);
+		} else {
+			return this.globals.get(name);
+		}
 	}
 
 	visitAssignExpr(expr) {
 		const value = this.evaluate(expr.value);
+
+		const distance = this.locals.get(expr);
+
+		if (distance) {
+			this.environment.assignAt(distance, expr.name, value);
+		} else {
+			this.globals.assign(expr.name, value);
+		}
+
 		this.environment.assign(expr.name, value);
 		return value;
 	}
@@ -230,5 +250,9 @@ export default class Interpreter {
 
 	execute(stmt) {
 		return stmt.accept(this);
+	}
+
+	resolve(expr, depth) {
+		this.locals.set(expr, depth);
 	}
 }

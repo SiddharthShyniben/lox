@@ -10,7 +10,7 @@ export default class LoxFunction {
 	call(interpreter, args) {
 		const environment = new Environment(this.closure);
 		this.declaration.params.forEach((param, i) => {
-			environment.define(param.lexeme, args[i]);
+			environment.define(param, args[i]);
 		});
 
 		try {
