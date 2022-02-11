@@ -52,6 +52,17 @@ export class Print {
 	}
 }
 
+export class Return {
+	constructor(keyword, value) {
+		this.keyword = keyword;
+		this.value = value;
+	}
+
+	accept(visitor) {
+		return visitor.visitReturnStmt(this);
+	}
+}
+
 export class Var {
 	constructor(name, initializer) {
 		this.name = name;

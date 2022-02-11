@@ -2,6 +2,7 @@ import {RuntimeError} from './runtime-error.js';
 import {runtimeError} from './utils.js';
 import Environment from './environment.js';
 import LoxFunction from './lox-function.js';
+import Return from './return.js';
 
 export default class Interpreter {
 	constructor() {
@@ -41,7 +42,7 @@ export default class Interpreter {
 	}
 
 	visitFunctionStmt(stmt) {
-		const _function = new LoxFunction(stmt);
+		const _function = new LoxFunction(stmt, this.environment);
 		this.environment.define(stmt.name.lexeme, _function);
 		return null;
 	}
@@ -140,6 +141,11 @@ export default class Interpreter {
 	visitPrintStmt(stmt) {
 		const value = this.evaluate(stmt.expression);
 		console.log(this.stringify(value));
+	}
+
+	visitReturnStmt(stmt) {
+		const value = stmt.value ? this.evaluate(stmt.value) : null;
+		throw new Return(value);
 	}
 
 	visitVarStmt(stmt) {

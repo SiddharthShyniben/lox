@@ -72,6 +72,7 @@ defineAst(outputDir, 'Stmt', [
 	'Function: name, params, body',
 	'If: condition, thenBranch, elseBranch',
 	'Print: expression',
+	'Return: keyword, value',
 	'Var: name, initializer',
 	'While: condition, body',
 ]);

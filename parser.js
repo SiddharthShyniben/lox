@@ -1,5 +1,5 @@
 import {Assign, Binary, Unary, Logical, Literal, Grouping, Variable, Call} from './types/expr.js';
-import {Print, Var, Block, If, While, Expression, Function} from './types/stmt.js';
+import {Print, Var, Block, If, While, Expression, Function, Return} from './types/stmt.js';
 import {error} from './utils.js';
 
 export default class Parser {
@@ -85,10 +85,23 @@ export default class Parser {
 		if (this.match('FOR')) return this.forStatement();
 		if (this.match('IF')) return this.ifStatement();
 		if (this.match('PRINT')) return this.printStatement();
+		if (this.match('RETURN')) return this.returnStatement();
 		if (this.match('WHILE')) return this.whileStatement();
 		if (this.match('LEFT_BRACE')) return new Block(this.block());
 
 		return this.expressionStatement();
+	}
+
+	returnStatement() {
+		const keyword = this.previous();
+		let value = null;
+		if (!this.check('SEMICOLON')) {
+			value = this.expression();
+		}
+
+		this.consume('SEMICOLON', 'Expect ; after return value.');
+
+		return new Return(keyword, value);
 	}
 
 	forStatement() {

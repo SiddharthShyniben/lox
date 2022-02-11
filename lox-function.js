@@ -1,17 +1,28 @@
 import Environment from './environment.js';
+import Return from './return.js';
 
 export default class LoxFunction {
-	constructor(declaration) {
+	constructor(declaration, closure) {
 		this.declaration = declaration;
+		this.closure = closure;
 	}
 
 	call(interpreter, args) {
-		const environment = new Environment(interpreter.globals);
+		const environment = new Environment(this.closure);
 		this.declaration.params.forEach((param, i) => {
 			environment.define(param.lexeme, args[i]);
 		});
 
-		interpreter.executeBlock(this.declaration.body, environment);
+		try {
+			interpreter.executeBlock(this.declaration.body, environment);
+		} catch (error) {
+			if (error instanceof Return) {
+				return error.value;
+			}
+
+			throw error;
+		}
+
 		return null;
 	}
 
