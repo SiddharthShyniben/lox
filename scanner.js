@@ -96,7 +96,7 @@ export default class Scanner {
 					this.number();
 				} else if (this.isAlpha(c)) {
 					this.identifier();
-				} else error(this.line, "Unexpected character.");
+				} else error(this.line, "Unexpected character '" + c + "'.");
 
 				break;
 		}

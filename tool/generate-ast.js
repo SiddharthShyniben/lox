@@ -58,6 +58,7 @@ ${
 defineAst(outputDir, 'Expr', [
 	'Assign: name, value',
 	'Binary: left, operator, right',
+	'Call: callee, paren, args',
 	'Grouping: expression',
 	'Literal: value',
 	'Logical: left, operator, right',
@@ -68,6 +69,7 @@ defineAst(outputDir, 'Expr', [
 defineAst(outputDir, 'Stmt', [
 	'Block: statements',
 	'Expression: expression',
+	'Function: name, params, body',
 	'If: condition, thenBranch, elseBranch',
 	'Print: expression',
 	'Var: name, initializer',

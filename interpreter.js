@@ -1,10 +1,18 @@
 import {RuntimeError} from './runtime-error.js';
 import {runtimeError} from './utils.js';
 import Environment from './environment.js';
+import LoxFunction from './lox-function.js';
 
 export default class Interpreter {
 	constructor() {
-		this.environment = new Environment();
+		this.globals = new Environment();
+		this.environment = this.globals;
+
+		this.globals.define('clock', {
+			arity: () => 0,
+			call: () => process.uptime(),
+			toString: () => '<native fn>',
+		});
 	}
 
 	interpret(statements) {
@@ -30,6 +38,28 @@ export default class Interpreter {
 		}
 
 		return value.toString();
+	}
+
+	visitFunctionStmt(stmt) {
+		const _function = new LoxFunction(stmt);
+		this.environment.define(stmt.name.lexeme, _function);
+		return null;
+	}
+
+	visitCallExpr(expr) {
+		const callee = this.evaluate(expr.callee);
+
+		const args = expr.args.map(arg => this.evaluate(arg));
+
+		if (!(callee instanceof LoxFunction)) {
+			throw new RuntimeError(expr.paren, 'Can only call functions and classes.');
+		}
+
+		if (args.length !== callee.arity()) {
+			throw new RuntimeError(expr.paren, `Expected ${callee.arity()} arguments but got ${args.length}`);
+		}
+
+		return callee.call(this, args);
 	}
 
 	visitLiteralExpr(expr) {

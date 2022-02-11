@@ -1,5 +1,5 @@
-import {Assign, Binary, Unary, Logical, Literal, Grouping, Variable} from './types/expr.js';
-import {Print, Var, Block, If, While, Expression} from './types/stmt.js';
+import {Assign, Binary, Unary, Logical, Literal, Grouping, Variable, Call} from './types/expr.js';
+import {Print, Var, Block, If, While, Expression, Function} from './types/stmt.js';
 import {error} from './utils.js';
 
 export default class Parser {
@@ -30,6 +30,7 @@ export default class Parser {
 
 	declaration() {
 		try {
+			if (this.match('FUN')) return this.function('function');
 			if (this.match('VAR')) return this.varDeclaration();
 
 			return this.statement();
@@ -40,6 +41,30 @@ export default class Parser {
 				throw error;
 			}
 		}
+	}
+
+	function(kind) {
+		const name = this.consume('IDENTIFIER', `Expect ${kind} name.`);
+
+		this.consume('LEFT_PAREN', `Expect '(' after ${kind} name.`);
+
+		const parameters = [];
+
+		if (!this.check('RIGHT_PAREN')) {
+			do {
+				if (parameters.length >= 255) {
+					this.error(this.peek(), 'Cannot have more than 255 parameters.');
+				}
+
+				parameters.push(this.consume('IDENTIFIER', 'Expect parameter name.'));
+			} while (this.match('COMMA'));
+		}
+
+		this.consume('RIGHT_PAREN', 'Expect ) after parameters.');
+		this.consume('LEFT_BRACE', `Expect { before ${kind} body`);
+
+		const body = this.block();
+		return new Function(name, parameters, body);
 	}
 
 	varDeclaration() {
@@ -246,7 +271,38 @@ export default class Parser {
 			return new Unary(operator, right);
 		}
 
-		return this.primary();
+		return this.call();
+	}
+
+	call() {
+		let expr = this.primary();
+
+		while (true) {
+			if (this.match('LEFT_PAREN')) {
+				expr = this.finishCall(expr);
+			} else {
+				break;
+			}
+		}
+
+		return expr;
+	}
+
+	finishCall(callee) {
+		const args = [];
+
+		if (!this.check('RIGHT_PAREN')) {
+			do {
+				if (args.length >= 255) {
+					this.error(this.peek(), 'Cannot have more than 8 arguments.');
+				}
+				args.push(this.expression());
+			} while (this.match('COMMA'));
+		}
+
+		const paren = this.consume('RIGHT_PAREN', 'Expect ) after arguments.');
+
+		return new Call(callee, paren, args);
 	}
 
 	primary() {
