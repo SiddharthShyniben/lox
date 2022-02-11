@@ -1,5 +1,5 @@
 import {Assign, Binary, Unary, Logical, Literal, Grouping, Variable, Call} from './types/expr.js';
-import {Print, Var, Block, If, While, Expression, Function, Return} from './types/stmt.js';
+import {Print, Var, Block, If, While, Expression, Function, Return, Class} from './types/stmt.js';
 import {error} from './utils.js';
 
 export default class Parser {
@@ -82,6 +82,7 @@ export default class Parser {
 	}
 
 	statement() {
+		if (this.match('CLASS')) return this.classDeclaration();
 		if (this.match('FOR')) return this.forStatement();
 		if (this.match('IF')) return this.ifStatement();
 		if (this.match('PRINT')) return this.printStatement();
@@ -90,6 +91,20 @@ export default class Parser {
 		if (this.match('LEFT_BRACE')) return new Block(this.block());
 
 		return this.expressionStatement();
+	}
+
+	classDeclaration() {
+		const name = this.consume('IDENTIFIER', 'Expect class name.');
+		this.consume('LEFT_BRACE', 'Expect { after class name.');
+
+		const methods = [];
+		while (!this.check('RIGHT_BRACE') && !this.isAtEnd()) {
+			methods.push(this.function('method'));
+		}
+
+		this.consume('RIGHT_BRACE', 'Expect } after class body.');
+
+		return new Class(name, methods);
 	}
 
 	returnStatement() {

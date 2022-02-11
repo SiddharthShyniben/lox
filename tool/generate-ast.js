@@ -1,5 +1,5 @@
 /* eslint-disable indent */
-import {mkdirSync, writeFileSync} from 'fs';
+import {mkdirSync, writeFileSync} from 'node:fs';
 const args = process.argv.slice(2);
 
 if (args.length !== 1) {
@@ -68,6 +68,7 @@ defineAst(outputDir, 'Expr', [
 
 defineAst(outputDir, 'Stmt', [
 	'Block: statements',
+	'Class: name, methods',
 	'Expression: expression',
 	'Function: name, params, body',
 	'If: condition, thenBranch, elseBranch',

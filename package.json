@@ -8,9 +8,6 @@
   "author": "Siddharth Shyniben <siddharth.muscat@gmail.com>",
   "license": "GPL-3.0",
   "keywords": [],
-  "dependencies": {
-    "dedent": "^0.7.0"
-  },
   "devDependencies": {
     "eslint": "^8.8.0"
   }

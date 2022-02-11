@@ -1,0 +1,11 @@
+var thing = "global";
+
+if (false) {
+	fun printThing() {
+		print thing;
+	}
+
+	printThing();
+	var thing = "local";
+	printThing();
+}

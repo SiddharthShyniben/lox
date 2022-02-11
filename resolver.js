@@ -24,7 +24,7 @@ export default class Resolver {
 	}
 
 	visitVariableExpr(expr) {
-		if (this.scopes.length > 0 && !this.scopes[this.scopes.length - 1].get(expr.name.lexeme)) {
+		if (this.scopes.length > 0 && !this.scopes[this.scopes.length - 1].has(expr.name.lexeme)) {
 			error(expr.name, 'Cannot read local variable in its own initializer.');
 		}
 		
@@ -49,10 +49,10 @@ export default class Resolver {
 
 	visitIfStmt(stmt) {
 		this.resolveExpr(stmt.condition);
-		this.resolve(stmt.thenBranch);
+		this.resolve(stmt.thenBranch.statements);
 
 		if (stmt.elseBranch) {
-			this.resolve(stmt.elseBranch);
+			this.resolve(stmt.elseBranch.statements);
 		}
 	}
 
@@ -126,6 +126,11 @@ export default class Resolver {
 				return;
 			}
 		}
+	}
+
+	visitClassStmt(stmt) {
+		this.declare(stmt.name);
+		this.define(stmt.name);
 	}
 
 	declare(name) {

@@ -8,6 +8,17 @@ export class Block {
 	}
 }
 
+export class Class {
+	constructor(name, methods) {
+		this.name = name;
+		this.methods = methods;
+	}
+
+	accept(visitor) {
+		return visitor.visitClassStmt(this);
+	}
+}
+
 export class Expression {
 	constructor(expression) {
 		this.expression = expression;

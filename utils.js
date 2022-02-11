@@ -1,5 +1,3 @@
-import dedent from 'dedent';
-
 let hadError = false;
 let hadRuntimeError = false;
 
@@ -20,8 +18,8 @@ export function error(token = {}, message = 'Error') {
 }
 
 export function runtimeError(error) {
-	console.error(dedent`${error.message}
-		[line ${error.token.line}]`);
+	console.error(`${error.message}
+[line ${error.token.line}]`);
 	hadRuntimeError = true;
 }
 

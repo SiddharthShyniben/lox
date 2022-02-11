@@ -2,6 +2,7 @@ import {RuntimeError} from './runtime-error.js';
 import {runtimeError} from './utils.js';
 import Environment from './environment.js';
 import LoxFunction from './lox-function.js';
+import LoxClass from './lox-class.js';
 import Return from './return.js';
 
 export default class Interpreter {
@@ -189,6 +190,12 @@ export default class Interpreter {
 
 	visitBlockStmt(expr) {
 		this.executeBlock(expr.statements, new Environment(this.environment));
+	}
+
+	visitClassStmt(stmt) {
+		this.environment.define(stmt.name, null);
+		const klass = new LoxClass(stmt.name.lexeme);
+		this.environment.define(stmt.name, klass);
 	}
 
 	visitIfStmt(stmt) {
