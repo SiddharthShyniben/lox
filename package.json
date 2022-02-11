@@ -1,0 +1,17 @@
+{
+  "name": "lox-lang",
+  "version": "1.0.0",
+  "description": "Lox lang",
+  "main": "index.js",
+  "scripts": {},
+  "type": "module",
+  "author": "Siddharth Shyniben <siddharth.muscat@gmail.com>",
+  "license": "GPL-3.0",
+  "keywords": [],
+  "dependencies": {
+    "dedent": "^0.7.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.8.0"
+  }
+}
