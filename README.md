@@ -14,6 +14,12 @@ if (condition) {
 }
 
 makeBreakfast(bacon, eggs, toast);
+
+fun sayHi(name) {
+  print "Hi, " + name;
+}
+
+sayHi("John");
 ```
 
 ## Running
