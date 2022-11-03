@@ -1,13 +1,18 @@
 import {error} from './utils.js';
+import unbug from 'unbug';
+
+const log = unbug('resolver');
 
 export default class Resolver {
 	constructor(interpreter) {
+		log('Creating resolver');
 		this.interpreter = interpreter;
 		this.scopes = [];
 		this.currentFunction = 'NONE';
 	}
 
 	visitBlockStmt(stmt) {
+		log('Entering scope via block statement');
 		this.beginScope();
 		this.resolve(stmt.statements);
 		this.endScope();
@@ -99,7 +104,7 @@ export default class Resolver {
 		this.resolveExpr(expr.right);
 	}
 	
-	visitUnaExpr(expr) {
+	visitUnaryExpr(expr) {
 		this.resolveExpr(expr.right);
 	}
 
@@ -120,8 +125,10 @@ export default class Resolver {
 	}
 
 	resolveLocal(expr, name) {
+		log('Resolving local', name.lexeme);
 		for (let i = this.scopes.length - 1; i > 0; i--) {
 			if (this.scopes[i].has(name.lexeme)) {
+				log('Resolved local', name.lexeme, 'in scope %o', this.scopes[i]);
 				this.interpreter.resolve(expr, this.scopes.length - (i + 1));
 				return;
 			}
@@ -131,6 +138,28 @@ export default class Resolver {
 	visitClassStmt(stmt) {
 		this.declare(stmt.name);
 		this.define(stmt.name);
+
+		this.beginScope();
+		this.scopes[this.scopes.length - 1].set('this', true);
+
+		stmt.methods.forEach(method => {
+			this.resolveFunction(method, 'METHOD');
+		});
+
+		this.endScope();
+	}
+
+	visitGetExpr(expr) {
+		this.resolveExpr(expr.object);
+	}
+
+	visitSetExpr(expr) {
+		this.resolveExpr(expr.object);
+		this.resolveExpr(expr.value);
+	}
+
+	visitThisExpr(expr) {
+		this.resolveLocal(expr, expr.keyword);
 	}
 
 	declare(name) {

@@ -59,9 +59,12 @@ defineAst(outputDir, 'Expr', [
 	'Assign: name, value',
 	'Binary: left, operator, right',
 	'Call: callee, paren, args',
+	'Get: object, name',
 	'Grouping: expression',
 	'Literal: value',
 	'Logical: left, operator, right',
+	'Set: object, name, value',
+	'This: keyword',
 	'Unary: operator, right',
 	'Variable: name',
 ]);

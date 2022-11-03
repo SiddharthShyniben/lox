@@ -3,15 +3,22 @@ import {runtimeError} from './utils.js';
 import Environment from './environment.js';
 import LoxFunction from './lox-function.js';
 import LoxClass from './lox-class.js';
+import LoxInstance from './lox-instance.js';
 import Return from './return.js';
+
+import unbug from 'unbug';
+
+const log = unbug('interpreter');
 
 export default class Interpreter {
 	constructor() {
+		log('Initializing interpreter');
 		this.globals = new Environment();
 		this.environment = this.globals;
 		this.locals = new Map();
 
-		this.globals.define('clock', {
+		log('Initializing globals');
+		this.globals.define({lexeme: 'clock'}, { // hack
 			arity: () => 0,
 			call: process.uptime,
 			toString: () => '<native fn>',
@@ -19,14 +26,18 @@ export default class Interpreter {
 	}
 
 	interpret(statements) {
+		log('Interpreting statements');
 		try {
 			for (const stmt of statements) {
 				this.execute(stmt);
 			}
 		} catch (error) {
+			log('Interpreting statements failed');
 			if (error instanceof RuntimeError) {
+				log('Interpreting statements failed with runtime error');
 				runtimeError(error);
 			} else {
+				log('Interpreting statements failed with error');
 				throw error;
 			}
 		}
@@ -44,17 +55,19 @@ export default class Interpreter {
 	}
 
 	visitFunctionStmt(stmt) {
+		log('Visiting function statement');
 		const _function = new LoxFunction(stmt, this.environment);
 		this.environment.define(stmt.name, _function);
 		return null;
 	}
 
 	visitCallExpr(expr) {
+		log('Visiting call expression');
 		const callee = this.evaluate(expr.callee);
 
 		const args = expr.args.map(arg => this.evaluate(arg));
 
-		if (!(callee instanceof LoxFunction)) {
+		if (!(callee instanceof LoxFunction) && !(callee instanceof LoxClass)) {
 			throw new RuntimeError(expr.paren, 'Can only call functions and classes.');
 		}
 
@@ -66,14 +79,17 @@ export default class Interpreter {
 	}
 
 	visitLiteralExpr(expr) {
+		log('Visiting literal expression');
 		return expr.value;
 	}
 
 	visitGroupingExpr(expr) {
+		log('Visiting grouping expression');
 		return this.evaluate(expr.expression);
 	}
 
 	visitUnaryExpr(expr) {
+		log('Visiting unary expression');
 		const right = this.evaluate(expr.right);
 
 		switch (expr.operator.type) {
@@ -94,6 +110,7 @@ export default class Interpreter {
 	}
 
 	visitBinaryExpr(expr) {
+		log('Visiting binary expression');
 		const left = this.evaluate(expr.left);
 		const right = this.evaluate(expr.right);
 
@@ -137,20 +154,24 @@ export default class Interpreter {
 	}
 
 	visitExpressionStmt(stmt) {
+		log('Visiting expression statement');
 		this.evaluate(stmt.expr ?? stmt.expression); // hmm
 	}
 
 	visitPrintStmt(stmt) {
+		log('Visiting print statement');
 		const value = this.evaluate(stmt.expression);
 		console.log(this.stringify(value));
 	}
 
 	visitReturnStmt(stmt) {
+		log('Visiting return statement');
 		const value = stmt.value ? this.evaluate(stmt.value) : null;
 		throw new Return(value);
 	}
 
 	visitVarStmt(stmt) {
+		log('Visiting variable statement');
 		let value = null;
 		if (stmt.initializer) {
 			value = this.evaluate(stmt.initializer);
@@ -160,11 +181,14 @@ export default class Interpreter {
 	}
 
 	visitVariableExpr(expr) {
+		log('Visiting variable expression');
 		return this.lookupVariable(expr.name, expr);
 	}
 
 	lookupVariable(name, expr) {
-		const distance = this.locals.get(expr);
+		log('Looking up variable %s', name.lexeme);
+		const distance = this.locals.get(expr.lexeme) ?? this.locals.get(name.lexeme);
+		log('Distance: %d', distance);
 
 		if (distance) {
 			return this.environment.getAt(distance, name);
@@ -174,9 +198,9 @@ export default class Interpreter {
 	}
 
 	visitAssignExpr(expr) {
+		log('Visiting assignment expression');
 		const value = this.evaluate(expr.value);
-
-		const distance = this.locals.get(expr);
+		const distance = this.locals.get(expr.lexeme);
 
 		if (distance) {
 			this.environment.assignAt(distance, expr.name, value);
@@ -189,16 +213,27 @@ export default class Interpreter {
 	}
 
 	visitBlockStmt(expr) {
+		log('Visiting block statement');
 		this.executeBlock(expr.statements, new Environment(this.environment));
 	}
 
 	visitClassStmt(stmt) {
+		log('Visiting class statement');
 		this.environment.define(stmt.name, null);
-		const klass = new LoxClass(stmt.name.lexeme);
+
+		const methods = new Map();
+		stmt.methods.forEach(method => {
+			const _function = new LoxFunction(method, this.environment);
+			methods.set(method.name.lexeme, _function);
+		});
+
+		const klass = new LoxClass(stmt.name.lexeme, methods);
+
 		this.environment.define(stmt.name, klass);
 	}
 
 	visitIfStmt(stmt) {
+		log('Visiting if statement');
 		if (this.isTruthy(this.evaluate(stmt.condition))) {
 			this.execute(stmt.thenBranch);
 		} else if (stmt.elseBranch) {
@@ -207,12 +242,14 @@ export default class Interpreter {
 	}
 
 	visitWhileStmt(stmt) {
+		log('Visiting while statement');
 		while (this.isTruthy(this.evaluate(stmt.condition))) {
 			this.execute(stmt.body);
 		}
 	}
 
 	visitLogicalExpr(expr) {
+		log('Visiting logical expression');
 		const left = this.evaluate(expr.left);
 
 		if (expr.operator.type === 'OR') {
@@ -224,7 +261,36 @@ export default class Interpreter {
 		return this.evaluate(expr.right);
 	}
 
+	visitGetExpr(expr) {
+		log('Visiting get expression');
+		const object = this.evaluate(expr.object);
+		if (object instanceof LoxInstance) {
+			return object.get(expr.name);
+		}
+
+		throw new RuntimeError(expr.name, 'Only instances have properties.');
+	}
+
+	visitSetExpr(expr) {
+		log('Visiting set expression');
+		const object = this.evaluate(expr.object);
+
+		if (!(object instanceof LoxInstance)) {
+			throw new RuntimeError('Only instances have fields.');
+		}
+
+		const value = this.evaluate(expr.value);
+		object.set(expr.name, value);
+		return value;
+	}
+
+	visitThisExpr(expr) {
+		log('Visiting this expression');
+		return this.lookupVariable(expr.keyword, expr);
+	}
+
 	executeBlock(statements, environment) {
+		log('Executing block');
 		const previous = this.environment;
 		try {
 			this.environment = environment;
@@ -260,6 +326,8 @@ export default class Interpreter {
 	}
 
 	resolve(expr, depth) {
-		this.locals.set(expr, depth);
+		log('Resolving %o', expr, 'at depth', depth);
+		const thing = expr.lexeme ? expr : expr.name;
+		this.locals.set(thing.lexeme, depth);
 	}
 }

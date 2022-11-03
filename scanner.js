@@ -1,8 +1,12 @@
 import Token from './token.js';
 import {error} from './utils.js';
+import unbug from 'unbug';
+
+const log = unbug('scanner');
 
 export default class Scanner {
 	constructor(source) {
+		log('Initializing scanner with source:', source);
 		this.source = source;
 
 		this.tokens = [];
@@ -27,14 +31,16 @@ export default class Scanner {
 			true: 'TRUE',
 			var: 'VAR',
 			while: 'WHILE',
-		}
+		};
 	}
 
 	scanTokens() {
+		log('Scanning tokens');
 		while (!this.isAtEnd()) {
 			this.start = this.current;
 			this.scanToken();
 		}
+		log('Finished scanning tokens');
 
 		this.tokens.push(new Token('EOF', '', null, this.line))
 		return this.tokens;
@@ -42,6 +48,7 @@ export default class Scanner {
 
 	scanToken() {
 		const c = this.advance();
+		log('Scanning:', c);
 
 		switch (c) {
 			// Bad code, but the tut says to do it and i'm afraid ill break
@@ -97,12 +104,11 @@ export default class Scanner {
 				} else if (this.isAlpha(c)) {
 					this.identifier();
 				} else error(this.line, "Unexpected character '" + c + "'.");
-
-				break;
 		}
 	}
 
 	string() {
+		log('Scanning string');
 		while (this.peek() != '"' && !this.isAtEnd()) {
 			if (this.peek() == '\n') this.line++;
 			this.advance();
@@ -120,6 +126,7 @@ export default class Scanner {
 	}
 
 	number() {
+		log('Scanning number');
 		while (this.isDigit(this.peek())) {
 			this.advance();
 		}
@@ -136,6 +143,7 @@ export default class Scanner {
 	}
 
 	identifier() {
+		log('Scanning identifier');
 		while (this.isAlphaNumeric(this.peek())) {
 			this.advance();
 		}
@@ -156,6 +164,7 @@ export default class Scanner {
 	}
 
 	addToken(type, literal = null) {
+		log('Adding token:', type, literal);
 		const text = this.source.substring(this.start, this.current);
 		this.tokens.push(new Token(type, text, literal, this.line));
 	}
