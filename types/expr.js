@@ -33,17 +33,6 @@ export class Call {
 	}
 }
 
-export class Get {
-	constructor(object, name) {
-		this.object = object;
-		this.name = name;
-	}
-
-	accept(visitor) {
-		return visitor.visitGetExpr(this);
-	}
-}
-
 export class Grouping {
 	constructor(expression) {
 		this.expression = expression;
@@ -73,28 +62,6 @@ export class Logical {
 
 	accept(visitor) {
 		return visitor.visitLogicalExpr(this);
-	}
-}
-
-export class Set {
-	constructor(object, name, value) {
-		this.object = object;
-		this.name = name;
-		this.value = value;
-	}
-
-	accept(visitor) {
-		return visitor.visitSetExpr(this);
-	}
-}
-
-export class This {
-	constructor(keyword) {
-		this.keyword = keyword;
-	}
-
-	accept(visitor) {
-		return visitor.visitThisExpr(this);
 	}
 }
 

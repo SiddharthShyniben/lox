@@ -10,9 +10,5 @@
   "keywords": [],
   "devDependencies": {
     "eslint": "^8.8.0"
-  },
-  "dependencies": {
-    "supports-color": "^9.2.1",
-    "unbug": "^1.0.0"
   }
 }

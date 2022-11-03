@@ -1,4 +1,4 @@
-import {Assign, Binary, Unary, Logical, Literal, Grouping, Variable, Call, Get, This, Set} from './types/expr.js';
+import {Assign, Binary, Unary, Logical, Literal, Grouping, Variable, Call} from './types/expr.js';
 import {Print, Var, Block, If, While, Expression, Function, Return, Class} from './types/stmt.js';
 import {error} from './utils.js';
 
@@ -212,8 +212,6 @@ export default class Parser {
 			if (expr instanceof Variable) {
 				const name = expr.name;
 				return new Assign(name, value);
-			} else if (expr instanceof Get) {
-				return new Set(expr.object, expr.name, value);
 			}
 
 			error(equals, 'Invalid assignment target.');
@@ -310,9 +308,6 @@ export default class Parser {
 		while (true) {
 			if (this.match('LEFT_PAREN')) {
 				expr = this.finishCall(expr);
-			} else if (this.match('DOT')) {
-				const name = this.consume('IDENTIFIER', 'Expect property name after \'.\'');
-				expr = new Get(expr, name);
 			} else {
 				break;
 			}
@@ -357,10 +352,6 @@ export default class Parser {
 
 		if (this.match('IDENTIFIER')) {
 			return new Variable(this.previous());
-		}
-		
-		if (this.match('THIS')) {
-			return new This(this.previous());
 		}
 
 		if (this.match('LEFT_PAREN')) {
